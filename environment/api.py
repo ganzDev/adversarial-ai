@@ -11,6 +11,19 @@ from environment.database import (
     list_tickets,
 )
 
+from pydantic import BaseModel, Field
+from fastapi import Query
+
+from agents.decision import VictimDecisionLayer
+from environment.audit_log import (
+    initialize_audit_log,
+    list_tool_events,
+    clear_tool_events,
+)
+
+from pathlib import Path
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -25,14 +38,18 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+BASE_DIR = Path(__file__).resolve().parent
+
+app.mount(
+    "/static",
+    StaticFiles(directory=BASE_DIR / "static"),
+    name="static",
+)
+
 
 @app.get("/")
-def home():
-    return {
-        "message": "AI IT Administration Portal is running",
-        "status": "ok",
-    }
-
+def root():
+    return FileResponse(BASE_DIR / "templates" / "dashboard.html")
 
 @app.get("/health")
 def health_check():
@@ -63,3 +80,44 @@ def ticket_details(ticket_id: int):
     if ticket is None:
         raise HTTPException(status_code=404, detail="Ticket not found")
     return ticket
+
+
+class InstructionRequest(BaseModel):
+    instruction: str = Field(min_length=1, max_length=4000)
+
+
+@app.post("/assistant/instruction")
+def submit_instruction(request: InstructionRequest):
+    """Submit an instruction to the victim AI."""
+    instruction = request.instruction.strip()
+
+    if not instruction:
+        return {
+            "message": "Please provide an instruction.",
+            "proposed_tool": None,
+            "tool_result": None,
+        }
+
+    decision_layer = VictimDecisionLayer()
+    return decision_layer.handle_instruction(instruction)
+
+
+@app.get("/audit-events")
+def get_audit_events(
+    limit: int = Query(default=50, ge=1, le=500),
+):
+    """Return recent security audit events."""
+    initialize_audit_log()
+    return {"events": list_tool_events(limit=limit)}
+
+
+
+@app.delete("/audit-events")
+def delete_audit_events():
+    """Clear local audit history after explicit confirmation in the UI."""
+    initialize_audit_log()
+    deleted_count = clear_tool_events()
+    return {
+        "message": "Audit history cleared.",
+        "deleted_count": deleted_count,
+    }

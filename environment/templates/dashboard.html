@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel AI | Security Operations</title>
+    <link rel="stylesheet" href="/static/dashboard.css">
+    <script src="/static/dashboard.js" defer></script>
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-icon">S</div>
+            <div>
+                <h2>Sentinel AI</h2>
+                <p>Security Operations</p>
+            </div>
+        </div>
+
+        <nav>
+            <a class="nav-item active" href="#overview">Overview</a>
+            <a class="nav-item" href="#assistant">AI Assistant</a>
+            <a class="nav-item" href="#audit">Audit Events</a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <span class="status-dot"></span>
+            Simulated environment
+            <p>All operations are isolated</p>
+        </div>
+    </aside>
+
+    <main class="main-content" id="overview">
+        <header class="page-header">
+            <div>
+                <p class="eyebrow">SECURITY CENTER / OVERVIEW</p>
+                <h1>AI Security Dashboard</h1>
+                <p class="subtitle">
+                    Monitor AI tool usage, authorization decisions, and security events.
+                </p>
+            </div>
+            <button id="refresh-button" class="button secondary">
+                Refresh data
+            </button>
+        </header>
+
+        <section class="status-banner">
+            <div>
+                <span class="status-dot"></span>
+                <strong>Gateway status: fail-closed stub</strong>
+                <p>Tool requests are currently denied until gateway policies are implemented.</p>
+            </div>
+            <span class="pill warning">Integration pending</span>
+        </section>
+
+        <section class="stats-grid" aria-label="Security statistics">
+            <article class="stat-card">
+                <p>Matching Events</p>
+                <h2 id="total-events">—</h2>
+                <span>From the audit log</span>
+            </article>
+            <article class="stat-card">
+                <p>Denied actions</p>
+                <h2 id="denied-events">—</h2>
+                <span>Authorization denied</span>
+            </article>
+            <article class="stat-card">
+                <p>Rejected requests</p>
+                <h2 id="rejected-events">—</h2>
+                <span>Invalid or unknown tools</span>
+            </article>
+            <article class="stat-card">
+                <p>High-risk events</p>
+                <h2 id="high-risk-events">—</h2>
+                <span>Marked high risk in the audit log</span>
+            </article>
+        </section>
+
+        <section class="panel" id="assistant">
+            <div class="panel-heading">
+                <div>
+                    <p class="eyebrow">INTERACTIVE TESTING</p>
+                    <h2>Victim AI Assistant</h2>
+                    <p class="subtitle">
+                        Submit an instruction to test the simulated environment.
+                    </p>
+                </div>
+                <span class="pill neutral">Backend connected</span>
+            </div>
+
+            <form id="instruction-form">
+                <label for="instruction">Instruction</label>
+                <textarea id="instruction" name="instruction" rows="3" maxlength="4000"
+                    placeholder="Example: Check the status of the simulated IT services." required></textarea>
+                <div class="form-footer">
+                    <span>Maximum 4,000 characters</span>
+                    <button type="submit" id="submit-button" class="button primary">
+                        Submit instruction
+                    </button>
+                </div>
+            </form>
+
+            <div id="assistant-status" class="notice" role="status" aria-live="polite">
+                Ready for an instruction.
+            </div>
+
+            <div id="assistant-result" class="result-card hidden">
+                <h3>Assistant response</h3>
+                <p id="assistant-message"></p>
+
+                <div class="result-details">
+                    <div>
+                        <span class="detail-label">Proposed tool</span>
+                        <code id="proposed-tool">None</code>
+                    </div>
+                    <div>
+                        <span class="detail-label">Authorization</span>
+                        <span id="authorization-result" class="pill neutral">No result</span>
+                    </div>
+                    <div>
+                        <span class="detail-label">Risk</span>
+                        <span id="risk-result" class="pill neutral">Unknown</span>
+                    </div>
+                </div>
+
+                <h3>Tool result details</h3>
+                <pre id="tool-result-json">No tool result.</pre>
+            </div>
+        </section>
+
+        <section class="panel" id="audit">
+            <div class="panel-heading">
+                <div>
+                    <p class="eyebrow">EVENT MONITORING</p>
+                    <h2>Security Audit Log</h2>
+                    <p class="subtitle">
+                        Recent tool requests and their recorded outcomes.
+                    </p>
+                </div>
+
+                <div class="audit-controls">
+                    <label class="limit-control">
+                        Decision
+                        <select id="decision-filter">
+                            <option value="all">All decisions</option>
+                            <option value="authorized">Authorized</option>
+                            <option value="denied">Denied</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </label>
+
+                    <label class="limit-control">
+                        Risk
+                        <select id="risk-filter">
+                            <option value="all">All risks</option>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </label>
+
+                    <label class="limit-control">
+                        Time range
+                        <select id="time-filter">
+                            <option value="all">All time</option>
+                            <option value="1">Last hour</option>
+                            <option value="24">Last 24 hours</option>
+                            <option value="168">Last 7 days</option>
+                        </select>
+                    </label>
+
+                    <label class="limit-control">
+                        Show
+                        <select id="event-limit">
+                            <option value="25">25</option>
+                            <option value="50" selected>50</option>
+                            <option value="100">100</option>
+                            <option value="250">250</option>
+                        </select>
+                    </label>
+
+                    <button id="clear-history-button" class="button danger-button" type="button">
+                        Clear test history
+                    </button>
+                </div>
+
+            </div>
+
+            <div id="audit-status" class="notice" role="status" aria-live="polite">
+                Loading audit events...
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time (UTC)</th>
+                            <th>Tool</th>
+                            <th>Operation</th>
+                            <th>Risk</th>
+                            <th>Decision</th>
+                            <th>Reason</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="audit-table-body">
+                        <tr>
+                            <td colspan="7">Loading events...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+
+
+            <div id="event-details" class="event-details hidden">
+                <div class="panel-heading">
+                    <div>
+                        <p class="eyebrow">EVENT INSPECTION</p>
+                        <h3>Audit Event Details</h3>
+                        <p id="detail-event-subtitle" class="subtitle">
+                            Select an event from the table.
+                        </p>
+                    </div>
+                    <button id="close-details" class="button secondary" type="button">
+                        Close
+                    </button>
+                </div>
+
+                <div class="detail-grid">
+                    <div>
+                        <span class="detail-label">Event ID</span>
+                        <code id="detail-event-id"></code>
+                    </div>
+                    <div>
+                        <span class="detail-label">Timestamp (UTC)</span>
+                        <span id="detail-timestamp"></span>
+                    </div>
+                    <div>
+                        <span class="detail-label">Tool</span>
+                        <code id="detail-tool"></code>
+                    </div>
+                    <div>
+                        <span class="detail-label">Resource</span>
+                        <code id="detail-resource"></code>
+                    </div>
+                    <div>
+                        <span class="detail-label">Operation</span>
+                        <span id="detail-operation"></span>
+                    </div>
+                    <div>
+                        <span class="detail-label">Authorization</span>
+                        <span id="detail-authorization"></span>
+                    </div>
+                    <div>
+                        <span class="detail-label">Risk</span>
+                        <span id="detail-risk"></span>
+                    </div>
+                    <div>
+                        <span class="detail-label">Outcome</span>
+                        <span id="detail-outcome"></span>
+                    </div>
+                </div>
+
+                <h3>Reason</h3>
+                <p id="detail-reason" class="detail-reason"></p>
+
+                <h3>Tool Arguments</h3>
+                <pre id="detail-arguments"></pre>
+            </div>
+        </section>
+
+        <footer class="page-footer">
+            Sentinel AI · Capstone research prototype · Fictional data only
+        </footer>
+    </main>
+</body>
+
+</html>
