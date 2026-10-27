@@ -19,6 +19,7 @@ from environment.audit_log import (
     initialize_audit_log,
     list_tool_events,
     clear_tool_events,
+    delete_tool_event,
 )
 
 from pathlib import Path
@@ -110,8 +111,6 @@ def get_audit_events(
     initialize_audit_log()
     return {"events": list_tool_events(limit=limit)}
 
-
-
 @app.delete("/audit-events")
 def delete_audit_events():
     """Clear local audit history after explicit confirmation in the UI."""
@@ -120,4 +119,18 @@ def delete_audit_events():
     return {
         "message": "Audit history cleared.",
         "deleted_count": deleted_count,
+    }
+
+
+
+@app.delete("/audit-events/{event_id}")
+def delete_single_audit_event(event_id: str):
+    """Delete one audit event by its unique ID."""
+    initialize_audit_log()
+    deleted = delete_tool_event(event_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Audit event not found")
+    return {
+        "message": "Audit event deleted.",
+        "event_id": event_id,
     }

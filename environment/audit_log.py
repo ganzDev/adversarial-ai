@@ -1,4 +1,4 @@
-
+import os
 import json
 import sqlite3
 import uuid
@@ -7,7 +7,12 @@ from pathlib import Path
 from typing import Any
 
 
-DATABASE_PATH = Path(__file__).resolve().parent / "portal.db"
+DATABASE_PATH = Path(
+    os.environ.get(
+        "APP_DATABASE_PATH",
+        str(Path(__file__).resolve().parent / "portal.db"),
+    )
+)
 
 # Never persist values associated with these argument names.
 SENSITIVE_KEYS = {
@@ -138,3 +143,14 @@ def clear_tool_events() -> int:
     with sqlite3.connect(DATABASE_PATH) as connection:
         cursor = connection.execute("DELETE FROM security_audit_events")
         return cursor.rowcount
+
+
+
+def delete_tool_event(event_id: str) -> bool:
+    """Delete one audit event by ID; return whether a row was deleted."""
+    with sqlite3.connect(DATABASE_PATH) as connection:
+        cursor = connection.execute(
+            "DELETE FROM security_audit_events WHERE event_id = ?",
+            (event_id,),
+        )
+        return cursor.rowcount > 0

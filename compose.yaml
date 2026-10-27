@@ -1,0 +1,17 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      APP_DATABASE_PATH: /data/portal.db
+    volumes:
+      - portal_data:/data
+    restart: unless-stopped
+
+volumes:
+  portal_data:

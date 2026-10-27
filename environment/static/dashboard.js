@@ -1,4 +1,3 @@
-
 const instructionForm = document.getElementById("instruction-form");
 const instructionInput = document.getElementById("instruction");
 const submitButton = document.getElementById("submit-button");
@@ -272,6 +271,53 @@ function renderAuditEvents() {
             });
 
             detailsCell.appendChild(detailsButton);
+
+            const deleteButton = document.createElement("button");
+            deleteButton.type = "button";
+            deleteButton.className = "details-button delete-event-button";
+            deleteButton.textContent = "Delete";
+            deleteButton.setAttribute(
+                "aria-label",
+                `Delete audit event from ${formatDate(event.timestamp)}`
+            );
+            deleteButton.addEventListener("click", async () => {
+                const confirmed = window.confirm(
+                    `Delete this audit event for "${event.tool}"? ` +
+                    "This cannot be undone."
+                );
+
+                if (!confirmed) return;
+
+                deleteButton.disabled = true;
+                detailsButton.disabled = true;
+
+                try {
+                    const response = await fetch(
+                        `/audit-events/${encodeURIComponent(event.event_id)}`,
+                        { method: "DELETE" }
+                    );
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(
+                            data.detail || "Could not delete this audit event."
+                        );
+                    }
+
+                    if (selectedEventId === event.event_id) {
+                        closeEventDetails();
+                    }
+
+                    setNotice(auditStatus, "Audit event deleted.", "success");
+                    await fetchAuditEvents();
+                } catch (error) {
+                    setNotice(auditStatus, error.message, "error");
+                    deleteButton.disabled = false;
+                    detailsButton.disabled = false;
+                }
+            });
+
+            detailsCell.appendChild(deleteButton);
             row.appendChild(detailsCell);
             auditTableBody.appendChild(row);
 
