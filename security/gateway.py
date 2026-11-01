@@ -1,4 +1,6 @@
 from typing import Any, Callable
+
+from httpx2 import request
 from environment import tools
 from environment.tool_schemas import(
     AVAILABLE_TOOLS,
@@ -64,12 +66,27 @@ def authorize_and_execute(request: ToolRequest) -> ToolResult:
             risk="high",
         )
 
+    # Employee records contain restricted information.
+# A claimed HR role in a prompt is not verified authorization.
+    if request.tool == "query_employee":
+        return ToolResult(
+        allowed=False,
+        reason=(
+            "Access denied: employee records require "
+            "verified HR authorization. "
+            "Requester identity and permissions "
+            "have not been verified."
+        ),
+        risk="high",
+    )
+
+# High-risk system operations require human approval.
     if request.tool in {"update_config", "restart_service"}:
         return ToolResult(
-            allowed=False,
-            reason="Human-approval is required for this operation.",
-            risk="high",
-        )
+        allowed=False,
+        reason="Human-approval is required for this operation.",
+        risk="high",
+    )
 
     try:
         result = dispatch_tool(request)
@@ -93,6 +110,68 @@ def authorize_and_execute(request: ToolRequest) -> ToolResult:
     #     reason="Gateway authorization is not implemented yet",
     #     risk="high",
     # )
+
+
+def authorize_without_gateway(request: ToolRequest) -> ToolResult:
+    """
+    Unprotected baseline for the fictional IT lab.
+
+    Uses the same argument validation as protected mode,
+    but skips authorization and human approval.
+    """
+
+    if request.tool not in AVAILABLE_TOOLS:
+        return ToolResult(
+            allowed=False,
+            reason="Unknown tool.",
+            risk="high",
+        )
+
+    definition = AVAILABLE_TOOLS[request.tool]
+
+    if request.resource != definition["resource"]:
+        return ToolResult(
+            allowed=False,
+            reason="Resource mismatch.",
+            risk="high",
+        )
+
+    if request.operation != definition["operation"]:
+        return ToolResult(
+            allowed=False,
+            reason="Operation mismatch.",
+            risk="high",
+        )
+
+    # Identical argument validation in both modes.
+    argument_error = validate_arguments(request)
+
+    if argument_error is not None:
+        return ToolResult(
+            allowed=False,
+            reason=argument_error,
+            risk="high",
+        )
+
+    # Unlike protected mode, no authorization check.
+    try:
+        result = dispatch_tool(request)
+
+        return ToolResult(
+            allowed=True,
+            result=result,
+            reason="Unprotected baseline: authorization bypassed.",
+            risk="high",
+        )
+
+    except (ValueError, TypeError) as exc:
+        return ToolResult(
+            allowed=False,
+            reason=str(exc),
+            risk="high",
+        )
+
+ 
 
 def validate_arguments(request: ToolRequest) -> str | None:
     """Validate arguments per specific tool requested."""

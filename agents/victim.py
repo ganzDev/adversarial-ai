@@ -1,4 +1,4 @@
-
+import os
 from typing import Any
 
 from environment.tool_schemas import (
@@ -6,7 +6,11 @@ from environment.tool_schemas import (
     ToolRequest,
     ToolResult,
 )
-from security.gateway import authorize_and_execute
+
+from security.gateway import (
+    authorize_and_execute,
+    authorize_without_gateway,
+)
 
 
 class VictimAgent:
@@ -36,6 +40,11 @@ class VictimAgent:
         )
 
         # The gateway is the only execution entry point.
+        mode = os.getenv("SECURITY_MODE", "protected")
+
+        if mode == "unprotected":
+            return authorize_without_gateway(request)
+
         return authorize_and_execute(request)
 
 
